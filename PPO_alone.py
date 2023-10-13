@@ -19,12 +19,21 @@ class PolicyValueNetwork(nn.Module):
 
 class WateringPlantEnv:
     def __init__(self):
-        self.moisture_target = 0.7
-        self.moisture_decay_rate = 0.01
+        self.moisture_target = 0.7       #this number describes the percentage of water held by the soil (100 percent means the soil reaches its limit of holding water)
+        self.moisture_decay_rate = moisture_decay_func(self, 1, 0.01)
         self.moisture_increase = 0.03
         self.moisture = self.moisture_target
         self.time_elapsed = 0
         self.history = []
+
+    def moisture_decay_func(self, dt, k = 1):
+        decay = self.moisture * (1 - np.e**(-k * dt))
+        return decay
+        #dt is the elapsed time, for 1 time step dt = 1
+        #k is loss rate (unit is 1/s) depend on current temperature
+        #k needs to corresponds with dt
+        # this decay is also representing the percentage decayed (if you decay by 0.5, that means the soil loses half of its maximum water capacity)
+
 
     def reset(self):
         self.moisture = self.moisture_target
