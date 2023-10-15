@@ -4,22 +4,28 @@ import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import random
+import matplotlib.pyplot as plt
+
+random.seed(42)
 
 # Data Collection
 data = []
 moisture = 0.7  # Starting point
 trend = 1
+period = 10
+
+PLOT_MOISTURE = False
 
 for _ in range(1000):
     data.append((moisture, None))  # Append moisture with placeholder label
     
     # Check every 5th measurement and label accordingly
-    if len(data) % 5 == 0:
-        if 0.65 <= data[-5][0] <= 0.75:
-            for i in range(-5, 0):
+    if len(data) % period == 0:
+        if 0.65 <= data[-period][0] <= 0.75:
+            for i in range(-period, 0):
                 data[i] = (data[i][0], 1)  # label as "good"
         else:
-            for i in range(-5, 0):
+            for i in range(-period, 0):
                 data[i] = (data[i][0], 0)  # label as "bad"
     
     # Update moisture, ensuring it remains within [0, 1]
@@ -39,10 +45,24 @@ for _ in range(1000):
     # Update moisture, ensuring it remains within [0, 1]
     moisture = min(max(0, moisture + direction * 0.01), 1)
 
-print(data)
+assert all(label is not None for _, label in data), "Unlabeled data exists"
+
+if PLOT_MOISTURE:
+    # Extract the moisture values (first column of `data`)
+    moisture_values = [moisture for moisture, _ in data]
+
+    # Create a histogram
+    plt.hist(moisture_values, bins=10, edgecolor='black', alpha=0.7)
+
+    # Add a title and labels
+    plt.title("Moisture Distribution")
+    plt.xlabel("Moisture")
+    plt.ylabel("Frequency")
+
+    # Show the plot
+    plt.show()
 
 # Make sure all samples are labeled
-assert all(label is not None for _, label in data), "Unlabeled data exists"
 
 
 # --- Model Definition ---
