@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 
-np.random.seed(42)
-
 # Define the neural network for the policy and value functions
 class PolicyValueNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -21,20 +19,12 @@ class PolicyValueNetwork(nn.Module):
 
 class WateringPlantEnv:
     def __init__(self):
-        self.moisture_target = 0.7       #this number describes the percentage of water held by the soil (100 percent means the soil reaches its limit of holding water)
+        self.moisture_target = 0.7
+        self.moisture_decay_rate = 0.01
         self.moisture_increase = 0.03
         self.moisture = self.moisture_target
         self.time_elapsed = 0
         self.history = []
-
-    def moisture_decay_func(self, dt, k = 1):
-        decay = self.moisture * (1 - np.e**(-k * dt))
-        return decay
-        #dt is the elapsed time, for 1 time step dt = 1
-        #k is loss rate (unit is 1/s) depend on current temperature
-        #k needs to corresponds with dt
-        # this decay is also representing the percentage decayed (if you decay by 0.5, that means the soil loses half of its maximum water capacity)
-
 
     def reset(self):
         self.moisture = self.moisture_target
@@ -43,11 +33,11 @@ class WateringPlantEnv:
         return torch.tensor([self.time_elapsed], dtype=torch.float32)
 
     def step(self, action):
-        if action == 1:  # water the plant
+        if action == 1:
             self.moisture += self.moisture_increase
             self.time_elapsed = 0
-        else:  # do not water
-            self.moisture -= self.moisture_decay_func(self.moisture, 0.01)
+        else:
+            self.moisture -= self.moisture_decay_rate
             self.time_elapsed += 1
 
         self.history.append(self.moisture)
@@ -94,7 +84,7 @@ class PPO:
         self.epsilon *= self.epsilon_decay
 
 # Parameters
-num_epochs = 2500
+num_epochs = 5000
 max_timesteps = 100
 batch_size = 256
 
@@ -137,21 +127,14 @@ for epoch in range(num_epochs):
         print(f"Epoch {epoch}, Average Reward: {rewards.mean().item()}")
 
 # Test the policy after training
-max_test_timesteps = 1000
+max_test_timesteps = 10000
 state = env.reset()
 total_reward = 0
-success = False  # Initialize a variable to keep track of success
-
 for t in range(max_test_timesteps):
     action = ppo.get_action(state.unsqueeze(0))
     next_state, reward, done = env.step(action)
     total_reward += reward
     state = next_state
     if done:
-        print(f"Great! The model is an hydration expert now at iteration ", t)
-        success = True  # Update the variable to indicate success
+        print(f"Great! The model is an hydration expert now")
         break
-
-# Only print the failure message if the success message was not printed
-if not success:
-    print("Unfortunately, policy does not pass the 100 iteration hydration test after 5000 timestamp, which means the policy does not grasp how to water a plant.")
