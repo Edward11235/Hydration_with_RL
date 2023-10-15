@@ -8,6 +8,7 @@ import random
 # Data Collection
 data = []
 moisture = 0.7  # Starting point
+trend = 1
 
 for _ in range(1000):
     data.append((moisture, None))  # Append moisture with placeholder label
@@ -22,8 +23,23 @@ for _ in range(1000):
                 data[i] = (data[i][0], 0)  # label as "bad"
     
     # Update moisture, ensuring it remains within [0, 1]
-    direction = random.choice([-1, 1])
-    moisture = min(max(0, moisture + direction * 0.1), 1)
+    if moisture == 1:  
+        # If moisture is at max, we want to decrease it
+        direction = -1  
+        trend = -1
+    elif moisture == 0:  
+        # If moisture is at min, we want to increase it
+        direction = 1  
+        trend = 1
+    else:
+        if trend == 1:
+            direction = 1 if random.uniform(0, 1) < 0.67 else -1  # 67%:33% ratio for +1:-1
+        elif trend == -1:
+            direction = 1 if random.uniform(0, 1) >= 0.67 else -1  # 67%:33% ratio for -1:+1
+    # Update moisture, ensuring it remains within [0, 1]
+    moisture = min(max(0, moisture + direction * 0.01), 1)
+
+print(data)
 
 # Make sure all samples are labeled
 assert all(label is not None for _, label in data), "Unlabeled data exists"
