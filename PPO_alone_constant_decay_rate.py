@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 
+np.random.seed(42)
+
 # Define the neural network for the policy and value functions
 class PolicyValueNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -84,7 +86,7 @@ class PPO:
         self.epsilon *= self.epsilon_decay
 
 # Parameters
-num_epochs = 5000
+num_epochs = 2500
 max_timesteps = 100
 batch_size = 256
 
@@ -130,11 +132,18 @@ for epoch in range(num_epochs):
 max_test_timesteps = 10000
 state = env.reset()
 total_reward = 0
+success = False  # Initialize a variable to keep track of success
+
 for t in range(max_test_timesteps):
     action = ppo.get_action(state.unsqueeze(0))
     next_state, reward, done = env.step(action)
     total_reward += reward
     state = next_state
     if done:
-        print(f"Great! The model is an hydration expert now")
+        print(f"Great! The model is an hydration expert now at iteration ", t)
+        success = True  # Update the variable to indicate success
         break
+
+# Only print the failure message if the success message was not printed
+if not success:
+    print("Unfortunately, policy does not pass the 100 iteration hydration test after 5000 timestamp, which means the policy does not grasp how to water a plant.")
